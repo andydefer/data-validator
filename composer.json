@@ -1,0 +1,50 @@
+{
+    "name": "andydefer/data-validator",
+    "description": "Validates and sanitizes structured data arrays with configurable constraints (size, depth, nesting, key/value types).",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "validation",
+        "metadata",
+        "constraints",
+        "data-validation",
+        "sanitization",
+        "array-validator",
+        "structured-data",
+        "php-validator",
+        "data-filter",
+        "input-validation"
+    ],
+    "authors": [
+        {
+            "name": "andydefer",
+            "email": "andydefer@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Kani\\DataValidator\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kani\\DataValidator\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "require": {
+        "php": ">=8.1"
+    },
+    "require-dev": {
+        "pestphp/pest": "^3.0",
+        "phpunit/phpunit": "^10.0|^11.0",
+        "rector/rector": "^2.4"
+    }
+}

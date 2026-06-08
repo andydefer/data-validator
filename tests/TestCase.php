@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kani\DataValidator\Tests;
+namespace AndyDefer\DataValidator\Tests;
 
 use PHPUnit\Framework\TestCase as BaseTestCase;
 

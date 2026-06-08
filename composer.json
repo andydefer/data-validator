@@ -24,12 +24,12 @@
     ],
     "autoload": {
         "psr-4": {
-            "Kani\\DataValidator\\": "src/"
+            "AndyDefer\\DataValidator\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Kani\\DataValidator\\Tests\\": "tests/"
+            "AndyDefer\\DataValidator\\Tests\\": "tests/"
         }
     },
     "config": {

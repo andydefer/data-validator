@@ -21,13 +21,19 @@ Aucune dépendance framework — fonctionne avec n'importe quel projet PHP.
 
 ## 🚀 Démarrage rapide
 
-### 1. Valider des métadonnées
+### 1. Instancier le validateur
 
 ```php
 <?php
 
-use Kani\DataValidator\Services\MetadataValidator;
+use AndyDefer\DataValidator\Services\MetadataValidator;
 
+$validator = new MetadataValidator();
+```
+
+### 2. Valider des métadonnées
+
+```php
 $metadata = [
     'user_agent' => 'Mozilla/5.0',
     'preferences' => ['theme' => 'dark', 'notifications' => true],
@@ -36,27 +42,29 @@ $metadata = [
 ];
 
 // Validation seule (lève une exception en cas d'erreur)
-$validated = MetadataValidator::validate($metadata);
+$validated = $validator->validate($metadata);
 
 // Validation sans exception (booléen)
-if (MetadataValidator::isValid($metadata)) {
+if ($validator->isValid($metadata)) {
     echo "Les métadonnées sont valides !";
 }
 
 // Assainissement seul (supprime null et tableaux vides)
-$cleaned = MetadataValidator::sanitize($metadata);
+$cleaned = $validator->sanitize($metadata);
 
 // Tout-en-un : validation + assainissement
-$processed = MetadataValidator::process($metadata);
+$processed = $validator->process($metadata);
 ```
 
-### 2. Gérer les erreurs
+### 3. Gérer les erreurs
 
 ```php
-use Kani\DataValidator\Exceptions\MetadataValidationException;
+use AndyDefer\DataValidator\Exceptions\MetadataValidationException;
+
+$validator = new MetadataValidator();
 
 try {
-    $metadata = MetadataValidator::validate($largeMetadata);
+    $metadata = $validator->validate($largeMetadata);
 } catch (MetadataValidationException $e) {
     echo "Erreur : " . $e->getMessage();
     print_r($e->getDetails()); // Détails contextuels
@@ -87,11 +95,13 @@ Par défaut, `MetadataValidator` applique les limites suivantes :
 Valide les métadonnées selon toutes les contraintes.
 
 ```php
+$validator = new MetadataValidator();
+
 // Succès : retourne les métadonnées
-$valid = MetadataValidator::validate(['key' => 'value']);
+$valid = $validator->validate(['key' => 'value']);
 
 // Échec : lève MetadataValidationException
-$valid = MetadataValidator::validate($invalidData);
+$valid = $validator->validate($invalidData);
 ```
 
 ### `isValid(?array $metadata): bool`
@@ -99,7 +109,9 @@ $valid = MetadataValidator::validate($invalidData);
 Version sans exception — retourne `true` ou `false`.
 
 ```php
-if (MetadataValidator::isValid($input)) {
+$validator = new MetadataValidator();
+
+if ($validator->isValid($input)) {
     // Traiter les données
 }
 ```
@@ -113,8 +125,9 @@ Supprime récursivement :
 Retourne `null` si le résultat est vide.
 
 ```php
+$validator = new MetadataValidator();
 $metadata = ['keep' => 'value', 'remove' => null, 'nested' => []];
-$result = MetadataValidator::sanitize($metadata);
+$result = $validator->sanitize($metadata);
 // $result = ['keep' => 'value']
 ```
 
@@ -123,7 +136,8 @@ $result = MetadataValidator::sanitize($metadata);
 Valide **ET** assainit en une seule opération.
 
 ```php
-$clean = MetadataValidator::process($rawMetadata);
+$validator = new MetadataValidator();
+$clean = $validator->process($rawMetadata);
 ```
 
 ### `getSize(?array $metadata): int`
@@ -131,7 +145,8 @@ $clean = MetadataValidator::process($rawMetadata);
 Retourne la taille des métadonnées en bytes (après `json_encode`).
 
 ```php
-$size = MetadataValidator::getSize($metadata); // 1245 bytes
+$validator = new MetadataValidator();
+$size = $validator->getSize($metadata); // 1245 bytes
 ```
 
 ### `getNestingDepth(array $metadata, int $currentDepth = 1): int`
@@ -139,7 +154,8 @@ $size = MetadataValidator::getSize($metadata); // 1245 bytes
 Calcule la profondeur d'imbrication maximale.
 
 ```php
-$depth = MetadataValidator::getNestingDepth($nestedArray); // 3
+$validator = new MetadataValidator();
+$depth = $validator->getNestingDepth($nestedArray); // 3
 ```
 
 ---
@@ -149,6 +165,8 @@ $depth = MetadataValidator::getNestingDepth($nestedArray); // 3
 ### Exemple 1 : Stockage de métadonnées utilisateur
 
 ```php
+$validator = new MetadataValidator();
+
 $userMetadata = [
     'browser' => 'Chrome 120',
     'os' => 'Windows 11',
@@ -160,8 +178,8 @@ $userMetadata = [
     'last_login' => '2024-01-15T10:30:00Z'
 ];
 
-if (MetadataValidator::isValid($userMetadata)) {
-    $clean = MetadataValidator::process($userMetadata);
+if ($validator->isValid($userMetadata)) {
+    $clean = $validator->process($userMetadata);
     // Stocker dans la base de données
 }
 ```
@@ -169,6 +187,8 @@ if (MetadataValidator::isValid($userMetadata)) {
 ### Exemple 2 : Refus de métadonnées malveillantes
 
 ```php
+$validator = new MetadataValidator();
+
 // Trop grande (> 64KB)
 $hugeMetadata = ['data' => str_repeat('a', 70000)];
 // Lève MetadataValidationException
@@ -193,6 +213,8 @@ $badMetadata = [$longKey => 'value'];
 ### Exemple 3 : Nettoyage automatique
 
 ```php
+$validator = new MetadataValidator();
+
 $dirty = [
     'keep1' => 'important',
     'null1' => null,
@@ -205,13 +227,24 @@ $dirty = [
     'empty_array' => []
 ];
 
-$clean = MetadataValidator::sanitize($dirty);
+$clean = $validator->sanitize($dirty);
 // Résultat :
 // [
 //     'keep1' => 'important',
 //     'keep2' => 42,
 //     'nested' => ['keep' => 'data']
 // ]
+```
+
+### Exemple 4 : Réutilisation du même validateur
+
+```php
+$validator = new MetadataValidator();
+
+// Valider plusieurs lots de métadonnées
+$metadata1 = $validator->process($input1);
+$metadata2 = $validator->process($input2);
+$metadata3 = $validator->process($input3);
 ```
 
 ---
@@ -221,13 +254,23 @@ $clean = MetadataValidator::sanitize($dirty);
 ### Avec un ORM (Eloquent / Doctrine)
 
 ```php
+use AndyDefer\DataValidator\Services\MetadataValidator;
+
 // Laravel / Eloquent
 class User extends Model
 {
+    private MetadataValidator $validator;
+
+    protected function __construct()
+    {
+        parent::__construct();
+        $this->validator = new MetadataValidator();
+    }
+    
     public function setMetadataAttribute(array $value): void
     {
         $this->attributes['metadata'] = json_encode(
-            MetadataValidator::process($value)
+            $this->validator->process($value)
         );
     }
 }
@@ -246,6 +289,22 @@ $token = $user->createNemesisToken(
 // Les métadonnées sont automatiquement validées et assainies
 ```
 
+### En injection de dépendances (Laravel)
+
+```php
+// Dans un service provider
+$this->app->singleton(MetadataValidator::class, function () {
+    return new MetadataValidator();
+});
+
+// Dans un contrôleur
+public function store(Request $request, MetadataValidator $validator)
+{
+    $clean = $validator->process($request->input('metadata'));
+    // ...
+}
+```
+
 ---
 
 ## 📊 Comparaison avec d'autres solutions
@@ -260,6 +319,7 @@ $token = $user->createNemesisToken(
 | Assainissement récursif (`null`, `[]`) | ❌ | ❌ | ✅ |
 | Détails d'erreur contextuels | ❌ | ❌ | ✅ |
 | Pas de dépendances framework | ✅ | ✅ | ✅ |
+| Testable (instanciation) | ✅ | ✅ | ✅ |
 
 ---
 
@@ -267,7 +327,7 @@ $token = $user->createNemesisToken(
 
 ### Personnalisation des limites
 
-Pour modifier les limites, étendez la classe ou fork.
+Pour modifier les limites, étendez la classe.
 
 ```php
 class CustomValidator extends MetadataValidator
@@ -277,19 +337,46 @@ class CustomValidator extends MetadataValidator
     private const MAX_KEYS = 500;
     private const MAX_KEY_LENGTH = 512;
 }
+
+// Utilisation
+$validator = new CustomValidator();
+$clean = $validator->process($metadata);
 ```
 
 ### Journalisation des erreurs
 
 ```php
+$validator = new MetadataValidator();
+
 try {
-    MetadataValidator::validate($metadata);
+    $validator->validate($metadata);
 } catch (MetadataValidationException $e) {
     Log::warning('Validation échouée', [
         'message' => $e->getMessage(),
         'details' => $e->getDetails()
     ]);
 }
+```
+
+### Pattern Singleton (optionnel)
+
+```php
+// Si vous préférez un singleton
+class MetadataValidatorSingleton
+{
+    private static ?MetadataValidator $instance = null;
+    
+    public static function getInstance(): MetadataValidator
+    {
+        if (self::$instance === null) {
+            self::$instance = new MetadataValidator();
+        }
+        return self::$instance;
+    }
+}
+
+// Utilisation
+$clean = MetadataValidatorSingleton::getInstance()->process($metadata);
 ```
 
 ---
@@ -314,27 +401,6 @@ Plus de **2500 tests** avec une couverture de **92%**.
 
 ## 📄 Licence
 
-MIT © [Kani](https://github.com/kani)
+MIT © [andydefer](https://github.com/andydefer)
 
 ---
-
-## ❓ FAQ
-
-**Pourquoi ne pas utiliser simplement `json_validate()` ?**
-- `json_validate()` vérifie uniquement la syntaxe JSON, pas les contraintes métier (taille, profondeur, types).
-
-**Les ressources PHP sont-elles autorisées ?**
-- Non. Les ressources sont converties en `false` par `json_encode()`, ce qui déclenche une `TypeError`. Utilisez des scalaires, tableaux ou `null`.
-
-**Peut-on stocker des objets ?**
-- Non. Les objets ne sont pas autorisés (exception levée). Utilisez des tableaux associatifs.
-
-**Ce package a-t-il des dépendances ?**
-- Aucune — uniquement PHP 8.3+.
-
-**Puis-je l'utiliser sans Laravel ?**
-- Absolument — pas de dépendance framework.
-
----
-
-**MetadataValidator** – La solution simple, sécurisée et sans framework pour valider et nettoyer vos données structurées. 🔐✨

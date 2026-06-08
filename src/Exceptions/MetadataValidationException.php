@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kani\DataValidator\Exceptions;
+namespace AndyDefer\DataValidator\Exceptions;
 
 use InvalidArgumentException;
 use Throwable;

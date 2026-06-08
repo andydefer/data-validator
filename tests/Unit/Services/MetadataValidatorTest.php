@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Kani\DataValidator\Tests\Unit\Services;
+namespace AndyDefer\DataValidator\Tests\Unit\Services;
 
 use stdClass;
-use Kani\DataValidator\Exceptions\MetadataValidationException;
-use Kani\DataValidator\Services\MetadataValidator;
-use Kani\DataValidator\Tests\TestCase;
+use AndyDefer\DataValidator\Exceptions\MetadataValidationException;
+use AndyDefer\DataValidator\Services\MetadataValidator;
+use AndyDefer\DataValidator\Tests\TestCase;
 
 /**
  * Test suite for MetadataValidator.
@@ -17,9 +17,12 @@ use Kani\DataValidator\Tests\TestCase;
  */
 final class MetadataValidatorTest extends TestCase
 {
+    private MetadataValidator $validator;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->validator = new MetadataValidator();
     }
 
     // ============================================================================
@@ -35,7 +38,7 @@ final class MetadataValidatorTest extends TestCase
         $metadata = ['key' => 'value', 'nested' => ['deep' => 'data']];
 
         // Act: Validate the metadata
-        $result = MetadataValidator::validate($metadata);
+        $result = $this->validator->validate($metadata);
 
         // Assert: Validated metadata is returned unchanged
         $this->assertSame($metadata, $result);
@@ -47,7 +50,7 @@ final class MetadataValidatorTest extends TestCase
     public function test_validate_returns_null_for_empty_metadata(): void
     {
         // Act: Validate empty array
-        $result = MetadataValidator::validate([]);
+        $result = $this->validator->validate([]);
 
         // Assert: Null is returned
         $this->assertNull($result);
@@ -59,7 +62,7 @@ final class MetadataValidatorTest extends TestCase
     public function test_validate_returns_null_for_null(): void
     {
         // Act: Validate null
-        $result = MetadataValidator::validate(null);
+        $result = $this->validator->validate(null);
 
         // Assert: Null is returned
         $this->assertNull($result);
@@ -78,7 +81,7 @@ final class MetadataValidatorTest extends TestCase
         $this->expectExceptionMessage('Metadata size (');
 
         // Act: Attempt to validate oversized metadata
-        MetadataValidator::validate($largeMetadata);
+        $this->validator->validate($largeMetadata);
     }
 
     /**
@@ -105,7 +108,7 @@ final class MetadataValidatorTest extends TestCase
         $this->expectExceptionMessage('Metadata nesting depth (6) exceeds maximum allowed (5)');
 
         // Act: Attempt to validate deeply nested metadata
-        MetadataValidator::validate($deepMetadata);
+        $this->validator->validate($deepMetadata);
     }
 
     /**
@@ -123,7 +126,7 @@ final class MetadataValidatorTest extends TestCase
         $this->expectExceptionMessage('Metadata contains 101 keys, maximum allowed is 100');
 
         // Act: Attempt to validate metadata with too many keys
-        MetadataValidator::validate($manyKeys);
+        $this->validator->validate($manyKeys);
     }
 
     /**
@@ -135,7 +138,7 @@ final class MetadataValidatorTest extends TestCase
         $metadata = [1 => 'value', 2 => 'another'];
 
         // Act: Validate the metadata
-        $result = MetadataValidator::validate($metadata);
+        $result = $this->validator->validate($metadata);
 
         // Assert: Integer keys are preserved
         $this->assertArrayHasKey(1, $result);
@@ -154,7 +157,7 @@ final class MetadataValidatorTest extends TestCase
 
         // Act: Attempt to use object as array key (triggers TypeError in PHP)
         $metadata = [new stdClass() => 'value'];
-        MetadataValidator::validate($metadata);
+        $this->validator->validate($metadata);
     }
 
     /**
@@ -170,7 +173,7 @@ final class MetadataValidatorTest extends TestCase
         $this->expectExceptionMessage('Metadata key exceeds maximum length of 255 characters');
 
         // Act: Attempt to validate with oversized key
-        MetadataValidator::validate($metadata);
+        $this->validator->validate($metadata);
     }
 
     /**
@@ -188,7 +191,7 @@ final class MetadataValidatorTest extends TestCase
         $this->expectException(\TypeError::class);
 
         // Act: Attempt to validate with invalid value
-        MetadataValidator::validate($metadata);
+        $this->validator->validate($metadata);
 
         // Cleanup
         if (is_resource($invalidValue)) {
@@ -208,7 +211,7 @@ final class MetadataValidatorTest extends TestCase
         $this->expectExceptionMessage('Metadata value for key "key" must be scalar, array, or null, object given');
 
         // Act: Attempt to validate with invalid value
-        MetadataValidator::validate($metadata);
+        $this->validator->validate($metadata);
     }
 
     // ============================================================================
@@ -224,7 +227,7 @@ final class MetadataValidatorTest extends TestCase
         $metadata = ['key' => 'value'];
 
         // Act & Assert
-        $this->assertTrue(MetadataValidator::isValid($metadata));
+        $this->assertTrue($this->validator->isValid($metadata));
     }
 
     /**
@@ -239,7 +242,7 @@ final class MetadataValidatorTest extends TestCase
         }
 
         // Act & Assert
-        $this->assertFalse(MetadataValidator::isValid($manyKeys));
+        $this->assertFalse($this->validator->isValid($manyKeys));
     }
 
     /**
@@ -248,7 +251,7 @@ final class MetadataValidatorTest extends TestCase
     public function test_is_valid_returns_true_for_null(): void
     {
         // Act & Assert
-        $this->assertTrue(MetadataValidator::isValid(null));
+        $this->assertTrue($this->validator->isValid(null));
     }
 
     // ============================================================================
@@ -264,7 +267,7 @@ final class MetadataValidatorTest extends TestCase
         $metadata = ['keep' => 'value', 'remove' => null, 'also_keep' => 'data'];
 
         // Act: Sanitize the metadata
-        $result = MetadataValidator::sanitize($metadata);
+        $result = $this->validator->sanitize($metadata);
 
         // Assert: Null values are removed
         $this->assertSame(['keep' => 'value', 'also_keep' => 'data'], $result);
@@ -286,7 +289,7 @@ final class MetadataValidatorTest extends TestCase
         ];
 
         // Act: Sanitize the metadata
-        $result = MetadataValidator::sanitize($metadata);
+        $result = $this->validator->sanitize($metadata);
 
         // Assert: Empty arrays are removed recursively
         $this->assertSame([
@@ -301,7 +304,7 @@ final class MetadataValidatorTest extends TestCase
     public function test_sanitize_returns_null_for_empty_array(): void
     {
         // Act: Sanitize empty array
-        $result = MetadataValidator::sanitize([]);
+        $result = $this->validator->sanitize([]);
 
         // Assert: Null is returned
         $this->assertNull($result);
@@ -313,7 +316,7 @@ final class MetadataValidatorTest extends TestCase
     public function test_sanitize_returns_null_for_null(): void
     {
         // Act: Sanitize null
-        $result = MetadataValidator::sanitize(null);
+        $result = $this->validator->sanitize(null);
 
         // Assert: Null is returned
         $this->assertNull($result);
@@ -336,7 +339,7 @@ final class MetadataValidatorTest extends TestCase
         ];
 
         // Act: Sanitize the metadata
-        $result = MetadataValidator::sanitize($metadata);
+        $result = $this->validator->sanitize($metadata);
 
         // Assert: Only valid values remain in nested structure
         $this->assertSame([
@@ -355,7 +358,7 @@ final class MetadataValidatorTest extends TestCase
         $metadata = ['key' => false];
 
         // Act: Sanitize the metadata
-        $result = MetadataValidator::sanitize($metadata);
+        $result = $this->validator->sanitize($metadata);
 
         // Assert: False value is preserved (not removed like null)
         $this->assertSame(['key' => false], $result);
@@ -370,7 +373,7 @@ final class MetadataValidatorTest extends TestCase
         $metadata = ['key' => 0];
 
         // Act: Sanitize the metadata
-        $result = MetadataValidator::sanitize($metadata);
+        $result = $this->validator->sanitize($metadata);
 
         // Assert: Zero value is preserved
         $this->assertSame(['key' => 0], $result);
@@ -385,7 +388,7 @@ final class MetadataValidatorTest extends TestCase
         $metadata = ['key' => ''];
 
         // Act: Sanitize the metadata
-        $result = MetadataValidator::sanitize($metadata);
+        $result = $this->validator->sanitize($metadata);
 
         // Assert: Empty string is preserved
         $this->assertSame(['key' => ''], $result);
@@ -411,7 +414,7 @@ final class MetadataValidatorTest extends TestCase
         ];
 
         // Act: Process the metadata
-        $result = MetadataValidator::process($rawMetadata);
+        $result = $this->validator->process($rawMetadata);
 
         // Assert: Only valid, non-empty values remain
         $this->assertSame([
@@ -434,7 +437,7 @@ final class MetadataValidatorTest extends TestCase
         $this->expectException(MetadataValidationException::class);
 
         // Act: Attempt to process invalid metadata
-        MetadataValidator::process($manyKeys);
+        $this->validator->process($manyKeys);
     }
 
     // ============================================================================
@@ -450,7 +453,7 @@ final class MetadataValidatorTest extends TestCase
         $metadata = ['key' => 'value'];
 
         // Act
-        $size = MetadataValidator::getSize($metadata);
+        $size = $this->validator->getSize($metadata);
 
         // Assert
         $this->assertEquals(strlen(json_encode($metadata)), $size);
@@ -462,7 +465,7 @@ final class MetadataValidatorTest extends TestCase
     public function test_get_size_returns_zero_for_null(): void
     {
         // Act & Assert
-        $this->assertEquals(0, MetadataValidator::getSize(null));
+        $this->assertEquals(0, $this->validator->getSize(null));
     }
 
     /**
@@ -471,7 +474,7 @@ final class MetadataValidatorTest extends TestCase
     public function test_get_size_returns_zero_for_empty_array(): void
     {
         // Act & Assert
-        $this->assertEquals(0, MetadataValidator::getSize([]));
+        $this->assertEquals(0, $this->validator->getSize([]));
     }
 
     // ============================================================================
@@ -493,7 +496,7 @@ final class MetadataValidatorTest extends TestCase
         ];
 
         // Act
-        $depth = MetadataValidator::getNestingDepth($metadata);
+        $depth = $this->validator->getNestingDepth($metadata);
 
         // Assert
         $this->assertEquals(3, $depth);
@@ -508,7 +511,7 @@ final class MetadataValidatorTest extends TestCase
         $metadata = ['key1' => 'value1', 'key2' => 'value2'];
 
         // Act
-        $depth = MetadataValidator::getNestingDepth($metadata);
+        $depth = $this->validator->getNestingDepth($metadata);
 
         // Assert
         $this->assertEquals(1, $depth);
@@ -535,8 +538,8 @@ final class MetadataValidatorTest extends TestCase
         ];
 
         // Act: Validate and sanitize
-        $validated = MetadataValidator::validate($rawMetadata);
-        $sanitized = MetadataValidator::sanitize($validated);
+        $validated = $this->validator->validate($rawMetadata);
+        $sanitized = $this->validator->sanitize($validated);
 
         // Assert: Only valid, non-empty values remain
         $this->assertSame([
@@ -561,7 +564,7 @@ final class MetadataValidatorTest extends TestCase
         $this->expectException(MetadataValidationException::class);
 
         // Act: Attempt to validate malicious structure
-        MetadataValidator::validate($malicious);
+        $this->validator->validate($malicious);
     }
 
     /**
@@ -576,7 +579,7 @@ final class MetadataValidatorTest extends TestCase
         }
 
         // Act: Validate the metadata
-        $result = MetadataValidator::validate($largeValidMetadata);
+        $result = $this->validator->validate($largeValidMetadata);
 
         // Assert: Validation passes
         $this->assertCount(100, $result);
@@ -602,7 +605,7 @@ final class MetadataValidatorTest extends TestCase
         ];
 
         // Act: Sanitize the metadata
-        $result = MetadataValidator::sanitize($metadata);
+        $result = $this->validator->sanitize($metadata);
 
         // Assert: All empty structures are removed
         $this->assertSame(['valid' => 'value'], $result);

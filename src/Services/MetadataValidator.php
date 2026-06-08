@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Kani\DataValidator\Services;
+namespace AndyDefer\DataValidator\Services;
 
-use Kani\DataValidator\Exceptions\MetadataValidationException;
+use AndyDefer\DataValidator\Exceptions\MetadataValidationException;
 
 /**
  * Service for validating and sanitizing structured metadata.
@@ -19,19 +19,20 @@ use Kani\DataValidator\Exceptions\MetadataValidationException;
  *
  * @example
  * // Basic validation
- * use Kani\DataValidator\Services\MetadataValidator;
+ * use AndyDefer\DataValidator\Services\MetadataValidator;
  *
- * $validated = MetadataValidator::validate([
+ * $validator = new MetadataValidator();
+ * $validated = $validator->validate([
  *     'user_agent' => 'Mozilla/5.0',
  *     'preferences' => ['theme' => 'dark'],
  *     'null_value' => null // Will be removed during sanitization
  * ]);
  *
  * // Sanitize only
- * $cleaned = MetadataValidator::sanitize($metadata);
+ * $cleaned = $validator->sanitize($metadata);
  *
  * // Check if metadata is valid without throwing exception
- * if (MetadataValidator::isValid($metadata)) {
+ * if ($validator->isValid($metadata)) {
  *     // Process metadata
  * }
  */
@@ -77,16 +78,16 @@ final class MetadataValidator
      *
      * @throws MetadataValidationException When validation fails
      */
-    public static function validate(?array $metadata): ?array
+    public function validate(?array $metadata): ?array
     {
         if ($metadata === null || $metadata === []) {
             return null;
         }
 
-        self::validateTotalSize($metadata);
-        self::validateNestingDepth($metadata);
-        self::validateKeyCount($metadata);
-        self::validateAllKeysAndValues($metadata);
+        $this->validateTotalSize($metadata);
+        $this->validateNestingDepth($metadata);
+        $this->validateKeyCount($metadata);
+        $this->validateAllKeysAndValues($metadata);
 
         return $metadata;
     }
@@ -97,10 +98,10 @@ final class MetadataValidator
      * @param array|null $metadata The metadata to validate
      * @return bool True if metadata is valid, false otherwise
      */
-    public static function isValid(?array $metadata): bool
+    public function isValid(?array $metadata): bool
     {
         try {
-            self::validate($metadata);
+            $this->validate($metadata);
             return true;
         } catch (MetadataValidationException) {
             return false;
@@ -118,7 +119,7 @@ final class MetadataValidator
      * @param array|null $metadata The metadata to sanitize
      * @return array|null Sanitized metadata or null if empty
      */
-    public static function sanitize(?array $metadata): ?array
+    public function sanitize(?array $metadata): ?array
     {
         if ($metadata === null || $metadata === []) {
             return null;
@@ -134,7 +135,7 @@ final class MetadataValidator
 
             // Recursively sanitize arrays
             if (is_array($value)) {
-                $value = self::sanitize($value);
+                $value = $this->sanitize($value);
                 // Skip empty arrays
                 if ($value === null || $value === []) {
                     continue;
@@ -155,10 +156,10 @@ final class MetadataValidator
      *
      * @throws MetadataValidationException When validation fails
      */
-    public static function process(?array $metadata): ?array
+    public function process(?array $metadata): ?array
     {
-        $validated = self::validate($metadata);
-        return self::sanitize($validated);
+        $validated = $this->validate($metadata);
+        return $this->sanitize($validated);
     }
 
     /**
@@ -167,7 +168,7 @@ final class MetadataValidator
      * @param array|null $metadata The metadata to measure
      * @return int Size in bytes, or 0 if metadata is null/empty
      */
-    public static function getSize(?array $metadata): int
+    public function getSize(?array $metadata): int
     {
         if ($metadata === null || $metadata === []) {
             return 0;
@@ -183,13 +184,13 @@ final class MetadataValidator
      * @param int $currentDepth Current depth (used internally for recursion)
      * @return int Maximum nesting depth
      */
-    public static function getNestingDepth(array $metadata, int $currentDepth = 1): int
+    public function getNestingDepth(array $metadata, int $currentDepth = 1): int
     {
         $maxDepth = $currentDepth;
 
         foreach ($metadata as $value) {
             if (is_array($value)) {
-                $depth = self::getNestingDepth($value, $currentDepth + 1);
+                $depth = $this->getNestingDepth($value, $currentDepth + 1);
                 $maxDepth = max($maxDepth, $depth);
             }
         }
@@ -208,9 +209,9 @@ final class MetadataValidator
      *
      * @throws MetadataValidationException When size exceeds limit
      */
-    private static function validateTotalSize(array $metadata): void
+    private function validateTotalSize(array $metadata): void
     {
-        $jsonSize = self::getSize($metadata);
+        $jsonSize = $this->getSize($metadata);
 
         if ($jsonSize > self::MAX_METADATA_SIZE) {
             throw MetadataValidationException::sizeExceeded($jsonSize, self::MAX_METADATA_SIZE);
@@ -225,7 +226,7 @@ final class MetadataValidator
      *
      * @throws MetadataValidationException When depth exceeds limit
      */
-    private static function validateNestingDepth(array $metadata, int $currentDepth = 1): void
+    private function validateNestingDepth(array $metadata, int $currentDepth = 1): void
     {
         if ($currentDepth > self::MAX_NESTING_DEPTH) {
             throw MetadataValidationException::nestingTooDeep($currentDepth, self::MAX_NESTING_DEPTH);
@@ -233,7 +234,7 @@ final class MetadataValidator
 
         foreach ($metadata as $value) {
             if (is_array($value)) {
-                self::validateNestingDepth($value, $currentDepth + 1);
+                $this->validateNestingDepth($value, $currentDepth + 1);
             }
         }
     }
@@ -245,7 +246,7 @@ final class MetadataValidator
      *
      * @throws MetadataValidationException When key count exceeds limit
      */
-    private static function validateKeyCount(array $metadata): void
+    private function validateKeyCount(array $metadata): void
     {
         $keyCount = count($metadata);
 
@@ -261,14 +262,14 @@ final class MetadataValidator
      *
      * @throws MetadataValidationException When any key or value is invalid
      */
-    private static function validateAllKeysAndValues(array $metadata): void
+    private function validateAllKeysAndValues(array $metadata): void
     {
         foreach ($metadata as $key => $value) {
-            self::validateKeyType($key);
+            $this->validateKeyType($key);
 
             $keyString = (string) $key;
-            self::validateKeyLength($keyString);
-            self::validateValueType($value, $keyString);
+            $this->validateKeyLength($keyString);
+            $this->validateValueType($value, $keyString);
         }
     }
 
@@ -279,7 +280,7 @@ final class MetadataValidator
      *
      * @throws MetadataValidationException When key type is invalid
      */
-    private static function validateKeyType(mixed $key): void
+    private function validateKeyType(mixed $key): void
     {
         if (!is_string($key) && !is_int($key)) {
             throw MetadataValidationException::invalidKeyType(gettype($key));
@@ -293,7 +294,7 @@ final class MetadataValidator
      *
      * @throws MetadataValidationException When key exceeds maximum length
      */
-    private static function validateKeyLength(string $key): void
+    private function validateKeyLength(string $key): void
     {
         $length = strlen($key);
 
@@ -310,9 +311,9 @@ final class MetadataValidator
      *
      * @throws MetadataValidationException When value type is invalid
      */
-    private static function validateValueType(mixed $value, ?string $key = null): void
+    private function validateValueType(mixed $value, ?string $key = null): void
     {
-        if (!self::isValidValue($value)) {
+        if (!$this->isValidValue($value)) {
             throw MetadataValidationException::invalidValueType($key, gettype($value));
         }
     }
@@ -325,7 +326,7 @@ final class MetadataValidator
      * @param mixed $value The value to check
      * @return bool True if value type is valid, false otherwise
      */
-    private static function isValidValue(mixed $value): bool
+    private function isValidValue(mixed $value): bool
     {
         return is_scalar($value) || is_array($value) || $value === null;
     }
